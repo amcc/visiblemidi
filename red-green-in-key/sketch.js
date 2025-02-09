@@ -5,6 +5,7 @@ const NOTE_ON = 144;
 const NOTE_OFF = 128;
 const OCTAVES = [24, 36, 48, 60, 72, 84, 96];
 const IN_KEY = [0, 2, 4, 5, 7, 9, 11];
+const START_TIME = Date.now();
 // const POT = 176;
 const keys = [];
 // set up the keys
@@ -76,7 +77,7 @@ function midiMessageReceived(event, index) {
   const attack = event.data.length > 2 ? event.data[2] : 1;
 
   // You can use the timestamp to figure out the duration of each note.
-  const timestamp = Date.now();
+  const timestamp = Date.now() - START_TIME;
 
   // console.log(cmd, note, attack)
   updateKey(cmd, note, attack, timestamp);
