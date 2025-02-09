@@ -13,6 +13,8 @@ for (let i = 0; i < 88; i++) {
     cmd: 0,
     note: i + START_NOTE,
     attack: 0,
+    onTime: 0,
+    duration: 0,
   };
   keys.push(key);
 }
@@ -66,10 +68,9 @@ function startListening() {
 
 // when a message is recieved from the MIDI do something
 function midiMessageReceived(event, index) {
-  console.log(event.data, index)
+  // console.log(event.data, index);
 
   // codes for on/off are different on different devices and across different modes on a device - here's where you probably want to console log the event.data and change some values. For the AKAI LPD8 MKII in CC mode the following works
-
   const cmd = event.data[0];
   const note = event.data[1];
   const attack = event.data.length > 2 ? event.data[2] : 1;
@@ -77,37 +78,23 @@ function midiMessageReceived(event, index) {
   // You can use the timestamp to figure out the duration of each note.
   const timestamp = Date.now();
 
-  // on the above device i want to decide whether its a Pot or Pad being used and do the following
-  // if (cmd === POT) {
-  //   console.log("pot", pitch, "value", value);
-  //   pots[pitch].value = value;
-  // } else {
-  //   const pad = padLookup[pitch]
-  //   if (cmd === NOTE_ON) pads[pad].velocity = value;
-  //   pads[pad].down = cmd === NOTE_ON ? true : false;
-  //   console.log("pad", pads[pad]);
-  // }
-
   // console.log(cmd, note, attack)
-  updateKey(cmd, note, attack);
-  // console.log(keys)
+  updateKey(cmd, note, attack, timestamp);
+  // console.log(keys);
   findColour(note);
 }
 
-function updateKey(cmd, note, attack) {
+function updateKey(cmd, note, attack, timestamp) {
   const key = keys[note - START_NOTE];
+  const prevOnTime = key.onTime;
+
   key.cmd = cmd === NOTE_ON ? 1 : 0;
   key.attack = cmd === NOTE_ON ? attack : 0;
-}
+  key.onTime = cmd === NOTE_ON ? timestamp : 0;
+  key.duration = cmd === NOTE_OFF ? timestamp - prevOnTime : 0;
 
-// function updateAttack(cmd, attack) {
-//   console.log("UPDATE ATTACK", cmd, attack, NOTE_ON)
-//   if (cmd === NOTE_ON) {
-//     return attack
-//   } else {
-//     return 0;
-//   }
-// }
+  console.log(key);
+}
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -127,7 +114,7 @@ function draw() {
     let y = height / 2;
     let diameter = (height / 125) * keys[i].attack;
     // fill(map(keys[i].attack, 0, 90, 0, 255), 140);
-    fill(findColour(keys[i].note, keys[i].attack))
+    fill(findColour(keys[i].note, keys[i].attack));
     circle(x, y, diameter);
     // findColour(keys[i].note)
   }
@@ -138,12 +125,12 @@ function findColour(note, attack) {
 
   //   })
   const octave = Math.floor((note - START_NOTE - 3) / 12) + 1;
-  const remainder = (note-START_NOTE - 3) % 12;
+  const remainder = (note - START_NOTE - 3) % 12;
   // console.log(octave, IN_KEY.some((value) => value === remainder));
   const isInKey = IN_KEY.some((value) => value === remainder);
-  const depth = map(octave, 0, 8, 40, 255)
-  const opacity = map(attack, 0, 125, 0, 255)
-  return  isInKey ? [0, depth, 0, opacity] : [depth, 0, 0, opacity]
+  const depth = map(octave, 0, 8, 40, 255);
+  const opacity = map(attack, 0, 125, 0, 255);
+  return isInKey ? [0, depth, 0, opacity] : [depth, 0, 0, opacity];
 }
 
 // helper functions to map values from MIDI so useful canvas values
